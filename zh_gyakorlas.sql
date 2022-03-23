@@ -42,3 +42,19 @@ select A, B from R where C >= 4 order by B, A
 -- 2.5
 select distinct A, B from R where B >= 2
 
+-- 2.7
+select lf.minfonfiz, kategoria
+from (select min(fonok.fizetes) as minfonfiz
+    from Dolgozo as dolg, Dolgozo as fonok
+    where dolg.fonoke = fonok.dkod) as lf, Fiz_kategoria
+where lf.minfonfiz >= also and lf.minfonfiz <= felso
+
+-- 2.8
+select d.foglalkozas, o.onev
+from dolgozo d
+left join osztaly o on d.oazon = o.oazon
+where foglalkozas = 
+    (select foglalkozas
+    from dolgozo
+    group by foglalkozas
+    having count(oazon) = 1)
