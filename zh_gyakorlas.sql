@@ -58,3 +58,6 @@ where foglalkozas =
     from dolgozo
     group by foglalkozas
     having count(oazon) = 1)
+
+-- 6.1
+pi nev ((gamma count(gyumolcs)->gy (pi gyumolcs (Szeret))) ⨝ gamma nev; count(gyumolcs)->gy Szeret)
