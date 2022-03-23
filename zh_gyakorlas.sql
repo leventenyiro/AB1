@@ -42,3 +42,5 @@ select A, B from R where C >= 4 order by B, A
 -- 2.5
 select distinct A, B from R where B >= 2
 
+-- 6.1
+pi nev ((gamma count(gyumolcs)->gy (pi gyumolcs (Szeret))) ⨝ gamma nev; count(gyumolcs)->gy Szeret)
