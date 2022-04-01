@@ -1,0 +1,64 @@
+select pkod
+from szallit
+group by pkod
+select count(*)
+from cikk
+where szin like 'zold'
+
+-- melyik project az, ahova minden zöld kell
+select cnev from cikk
+where szin like 'zold'
+minus
+select cnev
+from szallit
+natural join szallito natural join cikk natural join projekt
+where pkod = 5 and szin like 'zold'
+
+-- piros Zsombor
+select ckod, cnev from cikk
+where ckod = (
+    select ckod from cikk
+    minus
+    select distinct ckod from szallit)
+and szin = 'piros'
+
+/*select pkod, (select count(szallit.ckod)
+    from szallit, cikk
+    where pkod = sz.pkod
+        and szallit.ckod = cikk.ckod
+        and szin like 'zold')
+from szallit sz
+group by pkod*/
+
+--ez jó lehet 6.
+select pkod, pnev
+from projekt
+natural join szallit
+natural join cikk
+where szin like 'zold'
+group by pkod, pnev
+having count(ckod) = (select count(*)
+    from cikk
+    where szin like 'zold')
+
+-- ez jó lehet 7.
+select szkod, sznev
+from szallit
+natural join szallito
+group by szkod, sznev
+having count(distinct pkod) = (
+    select count(*)
+    from projekt)
+
+-- 3.
+select distinct sz1.nev
+from vzoli.szeret sz1, vzoli.szeret sz2
+where sz1.nev = sz2.nev
+    and sz1.gyumolcs = 'alma'
+    and sz2.gyumolcs <> 'alma'
+
+-- 4.
+select (fizetes + NVL(jutalek, 0)) numerikus, rpad('#', trunc(fizetes + NVL(jutalek, 0)) / 200, '#') grafikus
+from dolgozo, osztaly
+where dolgozo.oazon = osztaly.oazon
+
