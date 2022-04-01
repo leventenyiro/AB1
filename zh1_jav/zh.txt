@@ -88,13 +88,13 @@ select pkod, pnev
 from projekt
 natural join szallit
 natural join cikk
-where szin like 'zold'
+where szin = 'zold'
 group by pkod, pnev
 having count(ckod) = (select count(*)
     from cikk
-    where szin like 'zold');
+    where szin = 'zold');
 
-B4KZAN ARAMIS 2022.04.01 01:19:47
+B4KZAN ARAMIS 2022.04.01 01:38:11
 
 -- 7.
 select szkod, sznev
