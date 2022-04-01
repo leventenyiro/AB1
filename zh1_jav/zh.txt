@@ -50,15 +50,26 @@ having count(distinct pkod) = (
     select count(*)
     from projekt)
 
--- 3.
+-- 2.
 select distinct sz1.nev
 from vzoli.szeret sz1, vzoli.szeret sz2
 where sz1.nev = sz2.nev
     and sz1.gyumolcs = 'alma'
     and sz2.gyumolcs <> 'alma'
 
--- 4.
+-- 3.
+-- azon gyümik, amiket legfeljebb azok szeretnek, akik a körtét is
+-- legfeljebb, akik a körtét is szeretik
+-- akik a körtét nem szeretik nem számítanak bele
+select gyumolcs
+from szeret
+where gyumolcs <> 'körte'
+minus
+select gyumolcs
+from szeret sz, (select distinct nev from szeret minus select nev from szeret where gyumolcs='körte') korte_szereto
+where sz.nev = korte_szereto.nev
+
+-- 4. - javítani kéne legalább 2 ember
 select (fizetes + NVL(jutalek, 0)) numerikus, rpad('#', trunc(fizetes + NVL(jutalek, 0)) / 200, '#') grafikus
 from dolgozo, osztaly
 where dolgozo.oazon = osztaly.oazon
-
