@@ -23,7 +23,11 @@ where sz1.nev = sz2.nev
     and sz1.gyumolcs = 'alma'
     and sz2.gyumolcs <> 'alma';
 
+Micimackó
+Malacka
+Tigris
 
+B4KZAN ARAMIS 2022.04.01 01:15:57
 
 -- 3.
 select gyumolcs
@@ -39,6 +43,10 @@ from szeret sz, (select distinct nev
     where gyumolcs='körte') korte_szereto
 where sz.nev = korte_szereto.nev;
 
+dinnye
+
+B4KZAN ARAMIS 2022.04.01 01:17:20
+
 -- 4.
 select (fizetes + NVL(jutalek, 0)) numerikus, rpad('#', trunc(fizetes + NVL(jutalek, 0)) / 200, '#') grafikus
 from dolgozo
@@ -47,11 +55,33 @@ where dolgozo.oazon in (select distinct d1.oazon
     where d1.oazon = d2.oazon
         and d1.dnev <> d2.dnev);
 
+5000	#########################
+2450	############
+1300	######
+2850	##############
+2650	#############
+1900	#########
+1500	#######
+950	####
+1750	########
+2975	##############
+3000	###############
+800	####
+3000	###############
+1100	#####
+
+B4KZAN ARAMIS 2022.04.01 01:18:17
+
 -- 5.
 select beo.dnev, fonok.dnev
 from dolgozo beo, dolgozo fonok
 where beo.fonoke = fonok.dkod
 and length(beo.foglalkozas) = length(fonok.foglalkozas);
+
+FORD       JONES     
+SCOTT      JONES
+
+B4KZAN ARAMIS 2022.04.01 01:19:07
 
 -- 6.
 select pkod, pnev
@@ -64,6 +94,8 @@ having count(ckod) = (select count(*)
     from cikk
     where szin like 'zold');
 
+B4KZAN ARAMIS 2022.04.01 01:19:47
+
 -- 7.
 select szkod, sznev
 from szallit
@@ -72,3 +104,5 @@ group by szkod, sznev
 having count(distinct pkod) = (
     select count(*)
     from projekt);
+
+B4KZAN ARAMIS 2022.04.01 01:20:09
