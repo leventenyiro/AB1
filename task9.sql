@@ -8,8 +8,8 @@ create or replace function get_foglalkozas(input_onev varchar) return varchar is
     foglalkozasok varchar(100);
 begin
     for item in (select distinct foglalkozas
-        from dolgozo
-        natural join osztaly
+        from vzoli.dolgozo
+        natural join vzoli.osztaly
         where onev = input_onev
         order by foglalkozas asc)
     loop
