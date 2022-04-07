@@ -22,4 +22,7 @@ end;
 create table gyak9 as
 select distinct onev, get_foglalkozas(onev) as foglalkozasok
 from vzoli.dolgozo
-natural join vzoli.osztaly;
+natural join vzoli.osztaly
+where get_foglalkozas(onev) <> 'NULL';
+
+-- https://people.inf.elte.hu/vzoli/Adatbazisok_1/PLSQL/
