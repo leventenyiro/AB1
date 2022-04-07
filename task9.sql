@@ -4,13 +4,13 @@ set serveroutput on
 declare v_oss
 
 -- orai feladat
-create or replace function get_foglalkozas(onev varchar) return varchar is
+create or replace function get_foglalkozas(input_onev varchar) return varchar is
     foglalkozasok varchar(100);
 begin
     for item in (select distinct foglalkozas
         from dolgozo
         natural join osztaly
-        where onev = 'ACCOUNTING'
+        where onev = input_onev
         order by foglalkozas asc)
     loop
         foglalkozasok := concat(foglalkozasok, item.foglalkozas || '-');
@@ -18,3 +18,8 @@ begin
     foglalkozasok := substr(foglalkozasok, 0, length(foglalkozasok) - 1);
     return foglalkozasok;
 end;
+
+create table gyak9 as
+select distinct onev, get_foglalkozas(onev) as foglalkozasok
+from vzoli.dolgozo
+natural join vzoli.osztaly;
