@@ -54,3 +54,5 @@ end;
     -- ki szállítja a legtöbb cikket
     -- meg kell nézni ki mit szállít, és meg kell nézni a maxot (2 lépcsős mechanizmu
     -- count distinct kod
+
+-- végig kéne nézni a pdf-eket az sql-ről (with utasítás)
