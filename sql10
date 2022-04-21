@@ -1,0 +1,8 @@
+-- akiknek a fizetése nagyobb az összes dolgozó átlagfizujánál
+--select avg(fizetes) from vzoli.dolgozo
+select dkod, dnev, fizetes
+from vzoli.dolgozo
+where fizetes > (select avg(fizetes) from dolgozo)
+--order by fizetes desc;
+
+--select avg(fizetes) from vzoli.dolgozo
