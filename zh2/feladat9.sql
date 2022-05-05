@@ -38,11 +38,121 @@ SELECT kat_atlag(1) FROM dual;
 /* SELECT ... INTO v1, v2
 Írjunk meg egy procedúrát, amelyik kiírja azon dolgozók számát és átlagfizetését,
 akiknek a belépési dátuma a paraméterül megadott nevű napon (pl. 'Hétfő') volt.*/
-select to_char(to_date('2022.05.04', 'yyyy.MM.dd'), 'day') as nap from dual
 CREATE OR REPLACE PROCEDURE nap_atl(d varchar2) IS
 begin
-    select * 
-from vzoli.dolgozo
-where to_char(belepes, 'day') like 'wednesday'
+    for item in (select count(*) as cnt_employees, avg(fizetes) as avg_salary
+        from vzoli.dolgozo
+        where to_char(belepes, 'Day', 'nls_date_language=hungarian') like d || '%') loop
+        dbms_output.put_line('dolgozok szama: ' || item.cnt_employees || ' atlag fizetes:' || item.avg_salary);
+    end loop;
 end;
 
+set serveroutput on
+call nap_atl('Csütörtök');
+
+-- 9.3
+/* Insert, Delete, Update 
+Írjunk meg egy procedúrát, amelyik megnöveli azoknak a dolgozóknak a fizetését, akiknek a 
+fizetési kategóriája ugyanaz, mint a procedúra paramétere. A növelés mértéke a dolgozó
+osztályában előforduló legkisebb fizetés legyen.
+A procedúra a módosítás után írja ki a módosított (új) fizetések átlagát két tizedesjegyre kerekítve. */
+CREATE OR REPLACE PROCEDURE kat_novel(p_kategoria NUMBER) IS
+    cursor c1 is select * from dolgozo join fiz_kategoria on fizetes between also and felso where kategoria = p_kategoria for update of fizetes;
+    min_fizetes number;
+    db int := 0;
+    osszeg int := 0;
+begin
+    select min(fizetes) into min_fizetes from dolgozo join fiz_kategoria on fizetes between also and felso where kategoria = p_kategoria;
+    for rec in c1 loop
+        update dolgozo set fizetes = fizetes + min_fizetes where current of c1;
+        db := db + 1;
+        osszeg := osszeg + rec.fizetes + 1;
+    end loop;
+    dbms_output.put_line(round(osszeg/db, 2));
+end;
+
+set serveroutput on
+call kat_novel(2);
+
+-- 9.4
+/* Cursor (több soros SELECT)
+Írjunk meg egy procedúrát, amelyik veszi a paraméterül megadott osztály dolgozóit ábécé 
+szerinti sorrendben, és kiírja a foglalkozásaikat egy karakterláncban összefűzve.
+*/
+create or replace procedure print_foglalkozas(input_onev varchar) is
+    foglalkozasok varchar(100);
+begin
+    for item in (select distinct foglalkozas
+        from vzoli.dolgozo
+        natural join vzoli.osztaly
+        where onev = input_onev
+        order by foglalkozas asc)
+    loop
+        foglalkozasok := concat(foglalkozasok, item.foglalkozas || '-');
+    end loop;
+    foglalkozasok := substr(foglalkozasok, 0, length(foglalkozasok) - 1);
+    dbms_output.put_line(foglalkozasok);
+end;
+
+set serveroutput on
+call print_foglalkozas('ACCOUNTING');
+
+-- 9.5
+/* Cursor (több soros SELECT)
+Írjunk meg egy függvényt, amelyik veszi a paraméterül megadott osztály dolgozóit ábécé 
+szerinti sorrendben, és visszaadja a foglalkozásaikat egy karakterláncban összefűzve.
+*/
+create or replace function print_foglalkozas(input_onev varchar) return varchar is
+    foglalkozasok varchar(100);
+begin
+    for item in (select distinct foglalkozas
+        from vzoli.dolgozo
+        natural join vzoli.osztaly
+        where onev = input_onev
+        order by foglalkozas asc)
+    loop
+        foglalkozasok := concat(foglalkozasok, item.foglalkozas || '-');
+    end loop;
+    foglalkozasok := substr(foglalkozasok, 0, length(foglalkozasok) - 1);
+    return foglalkozasok;
+end;
+
+SELECT get_foglalkozas('ACCOUNTING') FROM dual; -- példa output: MANAGER-PRESIDENT-CLERK
+
+-- 9.6
+/* Asszociatív tömb  --> TABLE OF ... INDEX BY ...
+Írjunk meg egy procedúrát, amelyik veszi az első n prímszámot (1. prímszám: 2, 2. prímszám: 3, stb.)
+és beleteszi azokat egy asszociatív tömbbe. A procedúra a végén írja ki a tömb utolsó elemét és a
+prímszámok összegét. */
+CREATE OR REPLACE PROCEDURE primes(n integer) IS
+    type t_primes_type is table of integer index by pls_integer;
+    t_primes t_primes_type;
+    cnt pls_integer := 0;
+    i integer := 2;
+    is_prime boolean;
+    
+    summ integer := 0;
+    l_index pls_integer;
+begin
+    while (cnt < n) loop
+        is_prime := true;
+        for j in 2..i/2 loop
+            if mod(i, j) = 0 then
+                is_prime := false;
+                exit;
+            end if;
+        end loop;
+        if is_prime then
+            cnt := cnt + 1;
+            t_primes(cnt) := i;
+            -- dbms_output.put_line(i);
+        end if;
+        i := i + 1;
+    end loop;
+    
+    l_index := t_primes.first;
+    dbms_output.put_line(t_primes(0));
+    dbms_output.put_line(t_primes.prior(t_primes.last));
+end;
+
+call primes(5)
