@@ -161,3 +161,77 @@ end;
 
 set serveroutput on
 call primes(5)
+
+-- 9.7
+/* Exception
+Írjunk meg egy függvényt, amelyik egy karakteres típusú paraméterben egy dátumot 
+kap a következő formátumban: 'éééé.hh.nn' vagy 'nn.hh.éééé'. 
+A függvény adja vissza a nap nevét, pl. 'kedd'.
+Ha a megadott karakterlánc nem egy érvényes dátum, akkor adja vissza, hogy 'rossz dátum'.
+*/
+CREATE OR REPLACE FUNCTION nap_nev(p_kar VARCHAR2) RETURN VARCHAR2 IS
+begin
+    if regexp_like(p_kar, '^[0-9]{4}.[0-9]{2}.[0-9]{2}$')
+    then
+        return to_char(to_date(p_kar, 'yyyy.MM.dd'), 'day');
+    elsif regexp_like(p_kar, '^[0-9]{2}.[0-9]{2}.[0-9]{4}$')
+    then
+        return to_char(to_date(p_kar, 'dd.MM.yyyy'), 'day');
+    else
+        return 'rossz dátum';
+    end if;
+    exception
+        when others then
+            return 'rossz dátum';
+end;
+
+SELECT nap_nev('2017.05.01'), nap_nev('02.05.2017'), nap_nev('2017.13.13') FROM dual;
+
+-- 9.8
+/* Exception, SQLCODE
+Írjunk meg egy procedúrát, amelyik a paraméterében kapott számra külön sorokba kiírja 
+annak reciprokát, négyzetgyökét, és faktoriálisát. Ha bármelyik nem értelmezhető vagy
+túlcsordulást okoz, akkor erre a részre írja ki a kapott hibakódot. (SQLCODE). */
+CREATE OR REPLACE PROCEDURE szamok(n number) IS
+begin
+-- reciprok
+    dbms_output.put_line(1/n);
+-- négyzetgyök
+    dbms_output.put_line(sqrt(n));
+-- faktoriális
+    dbms_output.put_line(faktor(n));
+    exception
+        when others then
+            dbms_output.put_line(sqlerrm);
+end;
+
+set serveroutput on
+execute szamok(0);
+execute szamok(-2);
+execute szamok(40);
+
+-- 9.9
+/*
+Írjunk meg egy függvényt, amelyik visszaadja a paraméterként szereplő '+'-szal 
+elválasztott számok és kifejezések összegét. Ha valamelyik kifejezés nem szám,
+akkor azt az összeadásnál hagyja figyelmen kívül, vagyis 0-nak tekintse. */
+
+...
+CREATE OR REPLACE FUNCTION osszeg2(p_char VARCHAR2) RETURN NUMBER IS
+    cnt number := 0;
+    pos number := 1;
+    digits integer;
+begin
+    digits := regexp_substr(p_char, '[^+]+', 1, pos);
+
+    while digits is not null loop
+        cnt := cnt + to_number(digits);
+        pos := pos + 1;
+        digits := regexp_substr(p_char, '[^+]+', 1, pos);
+    end loop;
+    exception when others then
+        digits := 0;
+    return cnt;
+end;
+
+SELECT osszeg2('1+21 + bubu + y1 + 2 + -1 ++') FROM dual;
