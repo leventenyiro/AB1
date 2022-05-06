@@ -124,13 +124,13 @@ SELECT get_foglalkozas('ACCOUNTING') FROM dual; -- példa output: MANAGER-PRESID
 Írjunk meg egy procedúrát, amelyik veszi az első n prímszámot (1. prímszám: 2, 2. prímszám: 3, stb.)
 és beleteszi azokat egy asszociatív tömbbe. A procedúra a végén írja ki a tömb utolsó elemét és a
 prímszámok összegét. */
-CREATE OR REPLACE PROCEDURE primes(n integer) IS
+create or replace PROCEDURE primes(n integer) IS
     type t_primes_type is table of integer index by pls_integer;
     t_primes t_primes_type;
     cnt pls_integer := 0;
     i integer := 2;
     is_prime boolean;
-    
+
     summ integer := 0;
     l_index pls_integer;
 begin
@@ -143,16 +143,21 @@ begin
             end if;
         end loop;
         if is_prime then
-            cnt := cnt + 1;
             t_primes(cnt) := i;
-            -- dbms_output.put_line(i);
+            cnt := cnt + 1;
         end if;
         i := i + 1;
     end loop;
-    
+
     l_index := t_primes.first;
-    dbms_output.put_line(t_primes(0));
-    dbms_output.put_line(t_primes.prior(t_primes.last));
+    while l_index is not null loop
+        summ := summ + t_primes(l_index);
+        l_index := t_primes.next(l_index);
+    end loop;
+
+    dbms_output.put_line(t_primes(t_primes.last));
+    dbms_output.put_line(summ);
 end;
 
+set serveroutput on
 call primes(5)
