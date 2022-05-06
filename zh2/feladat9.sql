@@ -1,4 +1,4 @@
--- 9.1
+-- 9.1A
 /* SELECT ... INTO v1
 Írjunk meg egy függvényt, amelyik visszaadja egy adott fizetési kategóriába tartozó
 dolgozók átlagfizetését. - 3 megoldás */
@@ -15,6 +15,7 @@ begin
     return avg1;
 end;
 
+-- 9.1B
 CREATE OR REPLACE FUNCTION kat_atlag(n integer) RETURN number IS
     avg1 number;
 begin
@@ -25,6 +26,7 @@ begin
     return avg1;
 end;
 
+-- 9.1C
 CREATE OR REPLACE FUNCTION kat_atlag(n integer) RETURN number IS
     avg1 number;
 begin
@@ -79,13 +81,13 @@ call kat_novel(2);
 Írjunk meg egy procedúrát, amelyik veszi a paraméterül megadott osztály dolgozóit ábécé 
 szerinti sorrendben, és kiírja a foglalkozásaikat egy karakterláncban összefűzve.
 */
-create or replace procedure print_foglalkozas(input_onev varchar) is
+CREATE OR REPLACE PROCEDURE print_foglalkozas(o_nev varchar2) IS
     foglalkozasok varchar(100);
 begin
     for item in (select distinct foglalkozas
         from vzoli.dolgozo
         natural join vzoli.osztaly
-        where onev = input_onev
+        where onev = o_nev
         order by foglalkozas asc)
     loop
         foglalkozasok := concat(foglalkozasok, item.foglalkozas || '-');
@@ -102,13 +104,13 @@ call print_foglalkozas('ACCOUNTING');
 Írjunk meg egy függvényt, amelyik veszi a paraméterül megadott osztály dolgozóit ábécé 
 szerinti sorrendben, és visszaadja a foglalkozásaikat egy karakterláncban összefűzve.
 */
-create or replace function print_foglalkozas(input_onev varchar) return varchar is
+CREATE OR REPLACE FUNCTION get_foglalkozas(o_nev varchar2) RETURN varchar2 IS
     foglalkozasok varchar(100);
 begin
     for item in (select distinct foglalkozas
         from vzoli.dolgozo
         natural join vzoli.osztaly
-        where onev = input_onev
+        where onev = o_nev
         order by foglalkozas asc)
     loop
         foglalkozasok := concat(foglalkozasok, item.foglalkozas || '-');
@@ -163,75 +165,43 @@ set serveroutput on
 call primes(5)
 
 -- 9.7
-/* Exception
-Írjunk meg egy függvényt, amelyik egy karakteres típusú paraméterben egy dátumot 
-kap a következő formátumban: 'éééé.hh.nn' vagy 'nn.hh.éééé'. 
-A függvény adja vissza a nap nevét, pl. 'kedd'.
-Ha a megadott karakterlánc nem egy érvényes dátum, akkor adja vissza, hogy 'rossz dátum'.
-*/
-CREATE OR REPLACE FUNCTION nap_nev(p_kar VARCHAR2) RETURN VARCHAR2 IS
-begin
-    if regexp_like(p_kar, '^[0-9]{4}.[0-9]{2}.[0-9]{2}$')
-    then
-        return to_char(to_date(p_kar, 'yyyy.MM.dd'), 'day');
-    elsif regexp_like(p_kar, '^[0-9]{2}.[0-9]{2}.[0-9]{4}$')
-    then
-        return to_char(to_date(p_kar, 'dd.MM.yyyy'), 'day');
-    else
-        return 'rossz dátum';
-    end if;
-    exception
-        when others then
-            return 'rossz dátum';
-end;
+/* Cursor és asszociatív tömb 
+Írjunk meg egy procedúrát, amelyik veszi a dolgozókat ábácé szerinti sorrendben, 
+és minden páratlan sorszámú dolgozó nevét és fizetését beleteszi egy asszociatív tömbbe. 
+A procedúra a végén írja ki a tömb utolsó előtti elemében szereplő nevet és fizetést. */
+CREATE OR REPLACE PROCEDURE curs_tomb IS
 
-SELECT nap_nev('2017.05.01'), nap_nev('02.05.2017'), nap_nev('2017.13.13') FROM dual;
-
--- 9.8
-/* Exception, SQLCODE
-Írjunk meg egy procedúrát, amelyik a paraméterében kapott számra külön sorokba kiírja 
-annak reciprokát, négyzetgyökét, és faktoriálisát. Ha bármelyik nem értelmezhető vagy
-túlcsordulást okoz, akkor erre a részre írja ki a kapott hibakódot. (SQLCODE). */
-CREATE OR REPLACE PROCEDURE szamok(n number) IS
-begin
--- reciprok
-    dbms_output.put_line(1/n);
--- négyzetgyök
-    dbms_output.put_line(sqrt(n));
--- faktoriális
-    dbms_output.put_line(faktor(n));
-    exception
-        when others then
-            dbms_output.put_line(sqlerrm);
-end;
 
 set serveroutput on
-execute szamok(0);
-execute szamok(-2);
-execute szamok(40);
+execute curs_tomb();
 
--- 9.9
-/*
-Írjunk meg egy függvényt, amelyik visszaadja a paraméterként szereplő '+'-szal 
-elválasztott számok és kifejezések összegét. Ha valamelyik kifejezés nem szám,
-akkor azt az összeadásnál hagyja figyelmen kívül, vagyis 0-nak tekintse. */
-
-...
-CREATE OR REPLACE FUNCTION osszeg2(p_char VARCHAR2) RETURN NUMBER IS
-    cnt number := 0;
-    pos number := 1;
-    digits integer;
+-- 9.8
+/* Cursor és asszociatív tömb 
+Írjunk meg egy procedúrát, amelyik veszi a dolgozókat ábácé szerinti sorrendben, 
+és minden páratlan sorszámú dolgozó nevét és fizetését beleteszi egy asszociatív tömbbe. 
+A procedúra a végén írja ki a tömb utolsó előtti elemében szereplő nevet és fizetést. */
+CREATE OR REPLACE PROCEDURE curs_tomb IS
+    cursor c1 is select * from vzoli.dolgozo order by dnev;
+    rec c1%rowtype;
+    type rektip is record(dn dolgozo.dnev%type, fiz dolgozo.fizetes%type);
+    type t_tab is table of rektip index by pls_integer;
+    v_tab t_tab;
+    cnt pls_integer := 0;
 begin
-    digits := regexp_substr(p_char, '[^+]+', 1, pos);
-
-    while digits is not null loop
-        cnt := cnt + to_number(digits);
-        pos := pos + 1;
-        digits := regexp_substr(p_char, '[^+]+', 1, pos);
+    open c1;
+    loop
+        fetch c1 into rec;
+        if mod(rec.dkod, 2) = 1 then
+            v_tab(cnt).dn := rec.dnev;
+            v_tab(cnt).fiz := rec.fizetes;
+            cnt := cnt + 1;
+        end if;
+        exit when c1%notfound;
     end loop;
-    exception when others then
-        digits := 0;
-    return cnt;
+    close c1;
+    
+    dbms_output.put_line(v_tab(cnt - 1).dn || ' ' || v_tab(cnt - 1).fiz);
 end;
 
-SELECT osszeg2('1+21 + bubu + y1 + 2 + -1 ++') FROM dual;
+execute curs_tomb();
+-- MÉG NEM TELJESEN JÓ
