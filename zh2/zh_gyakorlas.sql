@@ -96,3 +96,10 @@ end;
 
 set serveroutput on
 call dolgozo_osztaly(20);
+
+-- hierarchical queries
+select distinct apja from nikovits.vagyonok connect by prior nev = apja;
+
+select nev, apja from nikovits.vagyonok
+start with nev = 'ADAM'
+connect by prior nev = apja;
