@@ -1,0 +1,180 @@
+select vdani.get_bead('CU6JW6') from dual;
+
+create table Artists (
+    Artist_name varchar2(50), --id jó lett volna, primary key tartalmazza a not nullt
+    age number,
+    netWorth number,
+    label_record varchar2(50),
+    CONSTRAINT artists_pk PRIMARY KEY (Artist_name),
+    CONSTRAINT fk_labels FOREIGN KEY (label_record) REFERENCES LabelRecord(Label_name)
+);
+
+create table Songs (
+    title varchar2(50) primary key,
+    album varchar2(50),
+    views number,
+    CONSTRAINT fk_albums2 FOREIGN KEY (album) REFERENCES Albums(title)
+);
+
+drop table Songs;
+
+create table Albums (
+    title varchar2(50) not null,
+    price float not null,
+    released_songs number not null,
+    label_record varchar2(50) not null,
+    artist varchar2(50) not null,
+    check (price>0),
+    CONSTRAINT albums2_pk PRIMARY KEY (title),
+    CONSTRAINT fk_labels2 FOREIGN KEY (label_record) REFERENCES LabelRecord(Label_name)
+);
+
+create table LabelRecord (
+    Label_name varchar2(50) primary key,
+    price number not null,
+    income number,
+    check (price>0)
+);
+
+
+select * from artists;
+select * from albums;
+select * from songs;
+select * from labelrecord;
+
+------------------------------------------------------------------------------
+-- 9. feladat: 
+
+-- Készíts egy zenei adatbázist.
+-- Hozz létre táblákat tetszőleges attribútumokkal az alkotóknak, zenéknek, albumoknak, kiadóknak.
+-- A táblák között legyenek tartalmi kapcsolatok: 
+-- - az albumoknak vannak kiadóik és alkotóik
+-- - a zenék albumokhoz tartoznak, stb.
+
+-- a) Írj PL/SQL procedúrát, amely visszaadja egy adott kiadónál megjelent albumok neveit és azokon 
+--    megjelent zenék számát. Ha az adott kiadónév nem létezik, kezeld kivételként és írj ki értelmes hibaüzenetet!
+set serveroutput on;
+
+create or replace procedure getAlbumData(recordName varchar2)
+as
+    cursor k is select * from albums where label_record=recordName;
+    sor k%rowtype;
+    record_label_not_found exception;
+    songsInAlbum numeric := 0;
+    counter numeric := 0;
+begin
+    for sor in k loop
+        select count(songs.title)
+        into songsInAlbum
+        from songs
+        where songs.album = sor.title;
+        counter := counter + 1;
+        if counter = 1 then
+            dbms_output.put_line('Albums related to ' || recordName || ' label:');
+        end if;
+        dbms_output.put_line(sor.title || ' - ' || songsInAlbum);
+    end loop;
+    if counter = 0 then
+        raise record_label_not_found;
+    end if;
+exception
+    when record_label_not_found then
+        dbms_output.put_line('The given label record is not in the database!');  
+end;
+/
+
+call getAlbumData('XO');
+
+
+--b) Írj PL/SQL függvényt, amely megnöveli a praméterként megadott alkotó albumainak árait 
+--   10%-al módosító kurzor segítségével. Töltsd be a alkotó albumainak adatait kollekcióba és 
+--   térj vissza a legolcsóbb és legdrágább album árának a különbségével.
+
+create or replace function increaseAlbumPricesChild(artistToGet varchar2)
+return float as
+    highest float := 0;
+    highestTitle varchar2(50);
+    lowest float := 10000000;
+    lowestTitle varchar2(50);
+    type albumData is varray(100) of albums%rowtype;
+    album_data albumData;
+    counter integer := 1;
+    cursor k is select * from albums where albums.artist=artistToGet for update;
+begin
+    album_data := albumData();
+    for sor in k loop
+        update albums set price = price*1.1 where current of k;
+    end loop;
+    for sor in k loop
+        album_data.extend(1);
+        album_data(counter) := sor;
+        counter := counter+1;
+        if (sor.price > highest) then
+            highest := sor.price;
+            highestTitle := sor.title;
+        end if;
+        if (sor.price < lowest) then
+            lowest := sor.price;
+            lowestTitle := sor.title;
+        end if;
+    end loop;
+    if lowest != 10000000 then
+        dbms_output.put_line('Most expensive album: ' || highestTitle || ' - price: ' || highest );
+        dbms_output.put_line('Cheapest album: ' || lowestTitle || ' - price: ' || lowest );
+    end if;
+    
+    dbms_output.put_line('-----------------------------------------------------------');
+    for i in 1..album_data.count loop
+        dbms_output.put_line(album_data(i).title || ' - ' || album_data(i).released_songs || ' - ' || album_data(i).price || ' - ' || album_data(i).artist);
+    end loop;
+    dbms_output.put_line('-----------------------------------------------------------');
+    
+    return (highest - lowest);
+end;
+/
+
+create or replace procedure increaseAlbumPricesParent(artistToGet varchar2)
+as
+    o number;
+begin
+    o := increaseAlbumPricesChild(artistToGet);
+    if o = -10000000 then
+        dbms_output.put_line('The artist "' || artistToGet || '" has no album in the database.');
+    else
+        dbms_output.put_line('Highest difference between album prices of artist "' || artistToGet || '" : ' ||o);
+    end if;
+end;
+/
+
+call increaseAlbumPricesParent('Post Malone');
+
+
+
+
+
+--c) Hozz létre egy triggert, amely egy új album beszúrása esetén kiírja az alkotó albumainak a számát. 
+
+create or replace trigger newAlbumInserted
+before insert on albums
+for each row
+declare
+    cursor k is select * from albums where artist=:new.artist;
+    sor k%rowtype;
+    counter integer := 1;
+    actualArtist varchar(50) := :new.artist;
+begin
+    for sor in k loop
+        counter := counter + 1;
+    end loop;
+    dbms_output.put_line('New album "' || :new.title || '" was inserted into the database.');
+    dbms_output.put_line(actualArtist || ' albums in the database: ' || counter);
+end;
+/
+
+insert into albums values(
+    'Scorpion', 17, 18, 'Atlantic Records', 'Drake'
+);
+
+insert into albums values(
+    'CLB', 30, 21, 'Atlantic Records', 'Drake'
+);
