@@ -11,19 +11,22 @@ CREATE OR REPLACE PROCEDURE fiz_mod IS
     cursor c1 is select min(dkod) as min_dkod, oazon, min(belepes) as min_belepes, (select count(*) from dolgozo where oazon = d1.oazon) - 1 as rajta_kivul
         from dolgozo d1
         group by oazon;
-    rec c1%rowtype;
+    --rec c1%rowtype;
 begin
-    open c1;
+    /*open c1;
     loop
         fetch c1 into rec;
         update dolgozo set fizetes = fizetes + rec.rajta_kivul * 100 where dkod = rec.min_dkod;
-        
+        exit when c1%notfound;
         for item in (select dkod, fizetes, oazon from dolgozo where dkod = rec.min_dkod) loop
             dbms_output.put_line(item.dkod || ' ' || item.fizetes);
         end loop;
-        exit when c1%notfound
+
     end loop;
-    close c1;
+    close c1;*/
+    for sor in c1 loop
+        update dolgozo set fizetes = fizetes + sor.rajta_kivul * 100 where dkod = sor.min_dkod;
+    end loop;
     
     rollback;
 end;
