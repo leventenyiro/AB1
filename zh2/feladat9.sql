@@ -170,38 +170,26 @@ call primes(5)
 és minden páratlan sorszámú dolgozó nevét és fizetését beleteszi egy asszociatív tömbbe. 
 A procedúra a végén írja ki a tömb utolsó előtti elemében szereplő nevet és fizetést. */
 CREATE OR REPLACE PROCEDURE curs_tomb IS
-
-
-set serveroutput on
-execute curs_tomb();
-
--- 9.8
-/* Cursor és asszociatív tömb 
-Írjunk meg egy procedúrát, amelyik veszi a dolgozókat ábácé szerinti sorrendben, 
-és minden páratlan sorszámú dolgozó nevét és fizetését beleteszi egy asszociatív tömbbe. 
-A procedúra a végén írja ki a tömb utolsó előtti elemében szereplő nevet és fizetést. */
-CREATE OR REPLACE PROCEDURE curs_tomb IS
-    cursor c1 is select * from vzoli.dolgozo order by dnev;
+    cursor c1 is select dkod, dnev, fizetes from dolgozo order by dnev;
     rec c1%rowtype;
-    type rektip is record(dn dolgozo.dnev%type, fiz dolgozo.fizetes%type);
-    type t_tab is table of rektip index by pls_integer;
+    type emp_rec_type is record(dn dolgozo.dnev%type, fiz dolgozo.fizetes%type);
+    type t_tab is table of emp_rec_type index by pls_integer;
     v_tab t_tab;
-    cnt pls_integer := 0;
+    l_index pls_integer := 0;
 begin
     open c1;
     loop
         fetch c1 into rec;
-        if mod(rec.dkod, 2) = 1 then
-            v_tab(cnt).dn := rec.dnev;
-            v_tab(cnt).fiz := rec.fizetes;
-            cnt := cnt + 1;
-        end if;
         exit when c1%notfound;
+        if mod(rec.dkod, 2) = 1 then
+            v_tab(l_index).dn := rec.dnev;
+            v_tab(l_index).fiz := rec.fizetes;
+            l_index := l_index + 1;
+        end if;
     end loop;
     close c1;
     
-    dbms_output.put_line(v_tab(cnt - 1).dn || ' ' || v_tab(cnt - 1).fiz);
+    dbms_output.put_line(v_tab(l_index - 2).dn || ' ' || v_tab(l_index - 1).fiz);
 end;
 
 execute curs_tomb();
--- MÉG NEM TELJESEN JÓ
